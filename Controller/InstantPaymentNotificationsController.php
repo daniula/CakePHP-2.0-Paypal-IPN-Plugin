@@ -32,7 +32,18 @@ class InstantPaymentNotificationsController extends PaypalIpnAppController {
 	public function process($id = null){
 		$debugging = (Configure::read('debug') && !is_null($id));
 		if ($debugging) {
-			$ipn = $this->InstantPaymentNotification->findById($id);
+
+			if (is_numeric($id)) {
+				$this->loadModel('Transaction');
+				$transaction = $this->Transaction->findById($id);
+			}
+
+			if (!empty($transaction)) {
+				$ipn = $this->InstantPaymentNotification->findByPayKey($transaction['Transaction']['payment_id']);
+			} else {
+				$ipn = $this->InstantPaymentNotification->findByPayKey($id);
+			}
+
 			$raw = $ipn['InstantPaymentNotification']['raw'];
 		} else {
 			$raw = file_get_contents("php://input");
