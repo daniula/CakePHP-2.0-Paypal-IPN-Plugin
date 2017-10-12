@@ -96,7 +96,8 @@ class InstantPaymentNotification extends PaypalIpnAppModel {
         'layout' => 'default',
         'template' => null,
         'log' => true,
-        'message' => null
+        'message' => null,
+        'config'  => 'default'
       );
       $options = array_merge($defaults, $options);
 
@@ -104,19 +105,17 @@ class InstantPaymentNotification extends PaypalIpnAppModel {
       if($options['log']){
         $this->log("Emailing: {$options['to']} through the PayPal IPN Plugin. ",'email');
       }
+      $fullname = sprintf('%s %s', $this->data['InstantPaymentNotification']['first_name'], $this->data['InstantPaymentNotification']['last_name']);
 
-      App::import('Component','Email');
-      $Email = new EmailComponent;
-
-      $Email->to = $options['to'];
-      $Email->from = $options['from'];
-      $Email->bcc = $options['bcc'];
-      $Email->cc = $options['cc'];
-      $Email->subject = $options['subject'];
-      $Email->sendAs = $options['sendAs'];
-      $Email->template = $options['template'];
-      $Email->layout = $options['layout'];
-
+      App::uses('CakeEmail', 'Network/Email');
+      $Email = new CakeEmail($options['config']);
+      $Email->to($options['to'], $fullname)
+            ->from($options['from'])
+            ->subject($options['subject'])
+            ->emailFormat($options['sendAs'])
+            ->template($options['template'], $options['layout']);
+      if (!empty($options['bcc'])) $Email->bcc($options['bcc']);
+      if (!empty($options['cc']))  $Email->cc($options['cc']);
       //Send the message.
       if($options['message']){
         $Email->send($options['message']);
